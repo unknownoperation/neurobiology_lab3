@@ -7,6 +7,9 @@
 ## Vm
 ![example](https://raw.githubusercontent.com/unknownoperation/neurobiology_lab3/master/res/Vm.png)
 
+## Potassium & Sodium ion-channel rates
+![example](https://raw.githubusercontent.com/unknownoperation/neurobiology_lab3/master/res/nmh.png)
+
 ## Vm - h
 ![example](https://raw.githubusercontent.com/unknownoperation/neurobiology_lab3/master/res/Vm-h.png)
 
