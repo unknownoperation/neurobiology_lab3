@@ -3,25 +3,31 @@ import numpy as np
 
 from scipy.integrate import odeint
 
-from model import n_0, m_0, h_0, generate_computing_derivatives_function
+from model import n_0, m_0, h_0, generate_computing_derivatives_function, I_A_func, I_B_func
 from lab3_utils import calculate_L, Id
 
 # Set random seed (for reproducibility)
 np.random.seed(30)
 
 
-def plot_results(Idv, Vy, T, plot_phase_space=False):
+def plot_results(L_A_func, L_B_func, Vy, T, syn_params, plot_phase_space=False):
     fig, ax = plt.subplots(figsize=(24, 14))
-    ax.plot(T, Idv)
+    ax.plot(np.array(T)*100, [I_A_func(T[i], Vy[i, 0], L_A_func, syn_params['V_A'], syn_params['N_A']) for i in range(len(T))])
     ax.set_xlabel('Time (ms)')
-    ax.set_ylabel(r'Current density (uA/$cm^2$)')
-    ax.set_title('Stimulus (Current density)')
+    ax.set_ylabel('I synapse A')
+    plt.grid()
+    fig.show()
+
+    fig, ax = plt.subplots(figsize=(24, 14))
+    ax.plot(np.array(T)*100, [I_B_func(T[i], Vy[i, 0], L_B_func, syn_params['V_B'], syn_params['N_B']) for i in range(len(T))])
+    ax.set_xlabel('Time (ms)')
+    ax.set_ylabel('I synapse B')
     plt.grid()
     fig.show()
 
     # Neuron potential
     fig, ax = plt.subplots(figsize=(24, 14))
-    ax.plot(T, Vy[:, 0])
+    ax.plot(np.array(T)*100, Vy[:, 0])
     ax.set_xlabel('Time (ms)')
     ax.set_ylabel('Vm (mV)')
     ax.set_title('Neuron potential')
@@ -31,7 +37,7 @@ def plot_results(Idv, Vy, T, plot_phase_space=False):
     # n, m, h
     fig, ax = plt.subplots(figsize=(24, 14))
     for i, label in enumerate(['n', 'm', 'h']):
-        ax.plot(T, Vy[:, i + 1], label=label)
+        ax.plot(np.array(T)*100, Vy[:, i + 1], label=label)
     ax.set_xlabel('Time (ms)')
     ax.set_ylabel('Potassium & Sodium ion-channel rates')
     ax.set_title('Potassium & Sodium ion-channel rates in time')
@@ -50,41 +56,40 @@ def plot_results(Idv, Vy, T, plot_phase_space=False):
             fig.show()
 
 
-def run_simulation(tmin, tmax, Id, plot_phase_space=False):
-    n_tics = 777
-    T = np.linspace(tmin, tmax, n_tics)
-
+def run_simulation(Id, plot_phase_space=False):
+    T = [int(t) for t in np.arange(0, 600, 1)]
+    print(T)
     # A
     L_A_params = {
-        'L0': 1e-4,
+        'L0': 0.0,
         'distr_func': np.random.poisson,
         'distr_params': {'lam': 10},
-        'distr_threshold': 3,
-        'L_in': 100,
-        'L_out': 10
+        'distr_threshold': 10,
+        'L_in': 0.01,
+        'L_out': 0.005
     }
     L_A_func = calculate_L(T, L_A_params)
 
 
     # B
     L_B_params = {
-        'L0': 1e-4,
+        'L0': 0.0,
         'distr_func': np.random.uniform,
         'distr_params': {'low': 0, 'high': 10},
-        'distr_threshold': 5,
-        'L_in': 100,
-        'L_out': 10
+        'distr_threshold': 7,
+        'L_in': 0.01,
+        'L_out': 0.005
     }
     L_B_func = calculate_L(T, L_B_params)
 
     syn_params = {
-        'V_A': 100,
-        'N_A': 10000,
-        'V_B': 100,
-        'N_B': 5000,
+        'V_A': 500,
+        'N_A': 100000,
+        'V_B': 500,
+        'N_B': 100000,
     }
 
-    Vm0 = -65.0
+    Vm0 = -75.74
     Y = np.array([Vm0, n_0(Vm0), m_0(Vm0), h_0(Vm0)])
 
     compute_derivatives = generate_computing_derivatives_function(Id, L_A_func, L_B_func, syn_params)
@@ -93,19 +98,13 @@ def run_simulation(tmin, tmax, Id, plot_phase_space=False):
     # Vy = (Vm[t0:tmax], n[t0:tmax], m[t0:tmax], h[t0:tmax])
     Vy = odeint(compute_derivatives, Y, T)
 
-    # Input stimulus
-    Idv = [Id(t) for t in T]
-
-    plot_results(Idv, Vy, T, plot_phase_space)
+    plot_results(L_A_func, L_B_func, Vy, T, syn_params, plot_phase_space)
 
 
 if __name__ == '__main__':
     ################################################################################
     #######################################    1   #################################
-    tmin = 0.0
-    tmax = 600.0
-
-    run_simulation(tmin, tmax, Id, plot_phase_space=False)
+    run_simulation(Id, plot_phase_space=True)
 
 
 

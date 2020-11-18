@@ -3,7 +3,6 @@ import numpy as np
 
 gK = 36.0  # (mS/cm^2)
 gNa = 120.0  # (mS/cm^2)
-gL = 0.3  # (mS/cm^2)
 
 Cm = 1.0  # (uF/cm^2)
 
@@ -58,6 +57,18 @@ def h_0(Vm=0.0):
     return alpha_h(Vm) / (alpha_h(Vm) + beta_h(Vm))
 
 
+def I_A_func(t0, Vm, L_A_func, V_A, N_A):
+    P_A = 1.0 / (1.0 + KdA * V_A / (L_A_func(t0) + 1e-9))
+    I_A = N_A * P_A * (Vm - VeqA) * gammaA
+    return I_A
+
+
+def I_B_func(t0, Vm, L_B_func, V_B, N_B):
+    P_B = 1.0 / (1.0 + KdB * V_B / (L_B_func(t0) + 1e-9))
+    I_B = N_B * P_B * (Vm - VeqB) * gammaB
+    return I_B
+
+
 def generate_computing_derivatives_function(input_stimulus_func, L_A_func, L_B_func, syn_params):
     def compute_derivatives(y, t0):
         dy = np.zeros((4,))
@@ -71,19 +82,10 @@ def generate_computing_derivatives_function(input_stimulus_func, L_A_func, L_B_f
         GK = (gK / Cm) * np.power(n, 4.0)
         GNa = (gNa / Cm) * np.power(m, 3.0) * h
 
-        if L_B_func(t0) < 1e-7:
-            P_A = 0.0
-        else:
-            P_A = 1.0 / (1.0 + KdA * syn_params['V_A'] / L_A_func(t0))
-        I_A = syn_params['N_A'] * P_A * (Vm - VeqA) * gammaA
+        I_A = I_A_func(t0, Vm, L_A_func, syn_params['V_A'],  syn_params['N_A'])
+        I_B = I_B_func(t0, Vm, L_B_func, syn_params['V_B'], syn_params['N_B'])
 
-        if L_B_func(t0) < 1e-7:
-            P_B = 0.0
-        else:
-            P_B = 1.0 / (1.0 + KdB * syn_params['V_B'] / L_B_func(t0))
-        I_B = syn_params['N_B'] * P_B * (Vm - VeqB) * gammaB
-
-        dy[0] = (input_stimulus_func(t0) / Cm) - (GK * (Vm - VK)) - (GNa * (Vm - VNa)) - I_A - I_B
+        dy[0] = (input_stimulus_func(t0) / Cm) - (GK * (Vm - VK)) - (GNa * (Vm - VNa)) - I_A / Cm - I_B / Cm
 
         # dn/dt
         dy[1] = (alpha_n(Vm) * (1.0 - n)) - (beta_n(Vm) * n)
