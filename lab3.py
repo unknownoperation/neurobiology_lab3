@@ -11,34 +11,6 @@ np.random.seed(30)
 
 
 def plot_results(Vy, T, plot_phase_space=False):
-    #fig, ax = plt.subplots(figsize=(24, 14))
-    #ax.plot(np.array(T), Vy[:, 4])
-    #ax.set_xlabel('Time (s)')
-    #ax.set_ylabel('I synapse A (A)')
-    #plt.grid()
-    #fig.show()
-    #
-    #fig, ax = plt.subplots(figsize=(24, 14))
-    #ax.plot(np.array(T), Vy[:, 5])
-    #ax.set_xlabel('Time (s)')
-    #ax.set_ylabel('I synapse B (A)')
-    #plt.grid()
-    #fig.show()
-    #
-    #fig, ax = plt.subplots(figsize=(24, 14))
-    #ax.plot(np.array(T), Vy[:, 6])
-    #ax.set_xlabel('Time (s)')
-    #ax.set_ylabel('I Na (A)')
-    #plt.grid()
-    #fig.show()
-    #
-    #fig, ax = plt.subplots(figsize=(24, 14))
-    #ax.plot(np.array(T), Vy[:, 7])
-    #ax.set_xlabel('Time (s)')
-    #ax.set_ylabel('I K (A)')
-    #plt.grid()
-    #fig.show()
-
     # Neuron potential
     fig, ax = plt.subplots(figsize=(24, 14))
     ax.plot(np.array(T) * 10, Vy[:, 0])
@@ -107,8 +79,38 @@ def check_spikes_ratio(Vy, T):
     plt.show()
 
 
+def plot_I(T, Vy_func, Y, Vy_old):
+    Vy = np.array([Vy_func([Vy_old[i, 0], Vy_old[i, 1], Vy_old[i, 2], Vy_old[i, 3], 0, 0, 0, 0], t)
+          for i, t in enumerate(T)])
 
-    
+    fig, ax = plt.subplots(figsize=(24, 14))
+    ax.plot(np.array(T) * 10, Vy[:, 4])
+    ax.set_xlabel('Time (ms)')
+    ax.set_ylabel('I synapse A (A)')
+    plt.grid()
+    fig.show()
+
+    fig, ax = plt.subplots(figsize=(24, 14))
+    ax.plot(np.array(T) * 10, Vy[:, 5])
+    ax.set_xlabel('Time (ms)')
+    ax.set_ylabel('I synapse B (A)')
+    plt.grid()
+    fig.show()
+
+    fig, ax = plt.subplots(figsize=(24, 14))
+    ax.plot(np.array(T) * 10, Vy[:, 6])
+    ax.set_xlabel('Time (ms)')
+    ax.set_ylabel('I Na (A)')
+    plt.grid()
+    fig.show()
+
+    fig, ax = plt.subplots(figsize=(24, 14))
+    ax.plot(np.array(T) * 10, Vy[:, 7])
+    ax.set_xlabel('Time (ms)')
+    ax.set_ylabel('I K (A)')
+    plt.grid()
+    fig.show()
+
 
 def run_simulation(Id, plot_phase_space=False):
     T = [int(t) for t in np.arange(0, 6000, 1)]
@@ -149,11 +151,11 @@ def run_simulation(Id, plot_phase_space=False):
     compute_derivatives = generate_computing_derivatives_function(Id, L_A_func, L_B_func, syn_params)
 
     # Solve ODE system
-    # Vy = (Vm[t0:tmax], n[t0:tmax], m[t0:tmax], h[t0:tmax])
     Vy = odeint(compute_derivatives, Y, T)
 
     plot_results(Vy, T, plot_phase_space)
     check_spikes_ratio(Vy, T)
+    plot_I(T, compute_derivatives, Y, Vy)
 
 
 if __name__ == '__main__':
